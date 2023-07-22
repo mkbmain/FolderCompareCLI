@@ -1,7 +1,7 @@
-﻿using FolderComparerCLI.Model;
-using FolderComparerCLI.Utils;
+﻿using FolderCompareCLI.Model;
+using FolderCompareCLI.Utils;
 
-namespace FolderComparerCLI;
+namespace FolderCompareCLI;
 
 public class Program
 {

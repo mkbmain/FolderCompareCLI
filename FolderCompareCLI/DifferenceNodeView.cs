@@ -1,8 +1,8 @@
-using FolderComparerCLI.Enums;
-using FolderComparerCLI.Model;
-using FolderComparerCLI.Utils;
+using FolderCompareCLI.Enums;
+using FolderCompareCLI.Model;
+using FolderCompareCLI.Utils;
 
-namespace FolderComparerCLI;
+namespace FolderCompareCLI;
 
 /// <summary>
 /// This is tightly bound to console implementation currently I am not a huge fan but YAGNI for the moment of refactoring it out

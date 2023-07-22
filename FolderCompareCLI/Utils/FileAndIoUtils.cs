@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace FolderComparerCLI.Utils;
+namespace FolderCompareCLI.Utils;
 
 internal static class FileAndIoUtils
 {

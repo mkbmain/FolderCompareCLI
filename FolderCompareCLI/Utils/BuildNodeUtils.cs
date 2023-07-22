@@ -1,7 +1,7 @@
-using FolderComparerCLI.Enums;
-using FolderComparerCLI.Model;
+using FolderCompareCLI.Enums;
+using FolderCompareCLI.Model;
 
-namespace FolderComparerCLI.Utils;
+namespace FolderCompareCLI.Utils;
 
 internal static class BuildNodeUtils
 {

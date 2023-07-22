@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderComparerCLI", "FolderComparerCLI\FolderComparerCLI.csproj", "{018BE200-3B41-44E3-A6A7-5A80A389A620}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderCompareCLI", "FolderCompareCLI\FolderCompareCLI.csproj", "{018BE200-3B41-44E3-A6A7-5A80A389A620}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,4 +1,4 @@
-namespace FolderComparerCLI.Enums;
+namespace FolderCompareCLI.Enums;
 
 public enum Differences
 {

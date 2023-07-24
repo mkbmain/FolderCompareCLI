@@ -13,10 +13,7 @@ public class Program
         -hash enables hash check lot slower off by default
 ";
 
-    private static bool ComparisonDone = false;
-    private static FolderNode _sourceFolderNodes = null;
-    private static FolderNode _destinationFolderNodes = null;
-    private static Dictionary<Guid, DifferenceNodeView> _differenceNodeViews = new();
+    private static Dictionary<Guid, DifferenceNodeView> _differenceNodeViews = null;
 
     private static readonly ConsoleColor ConsoleColor = Console.ForegroundColor;
 
@@ -44,11 +41,10 @@ public class Program
         {
             try
             {
-                (_sourceFolderNodes, _destinationFolderNodes) = BuildNodeUtils.BuildFolderPaths(sourcePath, destinationPath);
-                _differenceNodeViews = BuildNodeUtils.CalculateDifferences(_sourceFolderNodes, _destinationFolderNodes, calcHash)
+                var (sourceFolderNodes, destinationFolderNodes) = BuildNodeUtils.BuildFolderPaths(sourcePath, destinationPath);
+                _differenceNodeViews = BuildNodeUtils.CalculateDifferences(sourceFolderNodes, destinationFolderNodes, calcHash)
                     .Select(w => new DifferenceNodeView(w, sourcePath, destinationPath))
                     .ToDictionary(q => q.Id);
-                ComparisonDone = true;
             }
             catch (Exception e)
             {
@@ -57,15 +53,11 @@ public class Program
         });
 
         var previous = '/';
-        while (!ComparisonDone)
+        while (_differenceNodeViews == null)
         {
-            var percent = 0;
-            if (_sourceFolderNodes != null) percent += calcHash ? 12 : 25;
-            if (_destinationFolderNodes != null) percent += calcHash ? 12 : 25;
-
             Console.SetCursorPosition(0, 0);
             previous = previous == '/' ? '\\' : '/';
-            Console.Write($"{previous} Building data {percent}%");
+            Console.Write($"{previous} Building data");
             await Task.Delay(200);
         }
 
@@ -93,7 +85,7 @@ public class Program
                 Console.ReadLine();
                 return;
             }
-            
+
             Console.Clear();
             var allowedNodes = (Console.BufferHeight - 2) / 4;
             allowedNodes = allowedNodes < 1 ? 1 : allowedNodes;
@@ -130,7 +122,7 @@ public class Program
                 case "p" when pageNumber > 0:
                     pageNumber -= 1;
                     continue;
-                case "n" when pageNumber < differenceNodes.Length -1:
+                case "n" when pageNumber < differenceNodes.Length - 1:
                     pageNumber += 1;
                     continue;
                 case "e":

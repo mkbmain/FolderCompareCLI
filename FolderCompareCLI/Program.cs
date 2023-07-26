@@ -5,7 +5,7 @@ namespace FolderCompareCLI;
 
 public class Program
 {
-    private const string HelpText = @"Args required expected args: {Source}  {Destination} {flags}
+    private const string HelpText = @"Arguments required expected args: {Source}  {Destination} {flags}
     Source : source path for comparison
     Destination: destination path for comparison
     
@@ -79,6 +79,7 @@ public class Program
         int pageNumber = 0;
         while (true)
         {
+            Console.Clear();
             if (_differenceNodeViews.Any() == false)
             {
                 Console.WriteLine("No differences");
@@ -90,6 +91,7 @@ public class Program
             var allowedNodes = (Console.BufferHeight - 2) / 4;
             allowedNodes = allowedNodes < 1 ? 1 : allowedNodes;
             var differenceNodes = _differenceNodeViews.Chunk(allowedNodes).ToArray();
+            pageNumber = pageNumber < differenceNodes.Length ? pageNumber : differenceNodes.Length - 1;
             var page = pageNumber > differenceNodes.Length ? differenceNodes.Last() : differenceNodes.Skip(pageNumber).First();
             Console.WriteLine("Option -- details");
             for (var index = 0; index < page.Length; index++)
@@ -146,6 +148,7 @@ public class Program
         while (true)
         {
             Console.Clear();
+            Console.WriteLine(view.DisplayText + Environment.NewLine);
             for (var index = 0; index < view.Options.Count; index++)
             {
                 var item = view.Options[index];

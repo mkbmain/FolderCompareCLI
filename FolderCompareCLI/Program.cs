@@ -79,6 +79,7 @@ public class Program
         int pageNumber = 0;
         while (true)
         {
+            Console.SetCursorPosition(0,0);
             Console.Clear();
             if (_differenceNodeViews.Any() == false)
             {

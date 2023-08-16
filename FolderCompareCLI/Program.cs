@@ -36,6 +36,8 @@ public class Program
             return;
         }
 
+        Console.Clear();
+        
         Exception exception = null;
         Task.Run(() =>
         {

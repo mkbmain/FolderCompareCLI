@@ -192,7 +192,7 @@ public class Program
             {
                 Console.SetCursorPosition(pos.Left, pos.Top);
                 dots++;
-                Console.WriteLine("Executing {0}", string.Join("", Enumerable.Range(0, dots).Select(_ => ".")));
+                Console.WriteLine("Executing {0}   ", string.Join("", Enumerable.Range(0, dots).Select(_ => ".")));
                 dots = dots > 3 ? 0 : dots;
                 await Task.Delay(200);
             }

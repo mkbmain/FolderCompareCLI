@@ -7,6 +7,10 @@ internal static class BuildNodeUtils
 {
     public static (FolderNode src, FolderNode des) BuildFolderPaths(string src, string destination) => (GetFolderNode(src), GetFolderNode(destination));
 
+    private static long Checked = 0;
+
+    public static string CheckedSoFar => Checked == 0 ? "Building Tree" : FileAndIoUtils.BytesToString(Checked);
+
     public static FolderNode GetFolderNode(string path) =>
         new(
             path.TrimEnd(FileAndIoUtils.DirectorySeparator).Split(FileAndIoUtils.DirectorySeparator).Last(),
@@ -19,7 +23,7 @@ internal static class BuildNodeUtils
         .Select(q => new FileNode(q.Name, q.FullName, q.Length)).ToList();
 
 
-    public static IEnumerable<DifferenceNode> CalculateDifferences(FolderNode source, FolderNode dest, bool calcHash)
+    public static IEnumerable<DifferenceNode> CalculateDifferences(FolderNode source, FolderNode dest, bool deepCheck, bool hash)
     {
         var list = new List<DifferenceNode>();
         var lookupDirectories = dest.SubDirectories.ToDictionary(w => w.Name, w => (Used: false, Node: w));
@@ -32,17 +36,20 @@ internal static class BuildNodeUtils
                 continue;
             }
 
-            list.AddRange(CalculateDifferences(subDirectory, matchDirectory.Node, calcHash));
+            list.AddRange(CalculateDifferences(subDirectory, matchDirectory.Node, deepCheck, hash));
             lookupDirectories[subDirectory.Name] = (true, matchDirectory.Node);
         }
 
         list.AddRange(lookupDirectories.Where(w => !w.Value.Used).Select(w => new DifferenceNode((FolderNode)null, w.Value.Node, Differences.DirInDestNotInSource)));
 
-        list.AddRange(CalcDifferencesInFiles(source.Files, dest.Files, calcHash));
+        list.AddRange(CalcDifferencesInFiles(source.Files, dest.Files, deepCheck, hash));
         return list;
     }
 
-    private static IEnumerable<DifferenceNode> CalcDifferencesInFiles(IEnumerable<FileNode> source, IEnumerable<FileNode> dest, bool calcHash)
+    private const int ReportValue = 50 * 1000 * 1000; // don't report files under 50MB approx they should be so quick not worth printing out
+    private static int LastStringLen = 0;
+
+    private static IEnumerable<DifferenceNode> CalcDifferencesInFiles(IEnumerable<FileNode> source, IEnumerable<FileNode> dest, bool deepCheck, bool hash)
     {
         var list = new List<DifferenceNode>();
         var lookupFiles = dest.ToDictionary(w => w.Name, w => (Used: false, Node: w));
@@ -54,11 +61,27 @@ internal static class BuildNodeUtils
                 continue;
             }
 
-            if (file.Size != matchFile.Node.Size || (calcHash && FileAndIoUtils.CalculateMd5(matchFile.Node.FullPath) != FileAndIoUtils.CalculateMd5(file.FullPath)))
+            if (hash || deepCheck && file.Size > ReportValue)
+            {
+                Console.SetCursorPosition(0, 3);
+                var line = $"{file.Name} -- {FileAndIoUtils.BytesToString(file.Size)}";
+                Console.Write(line);
+                if (line.Length < LastStringLen)
+                {
+                    Console.Write(new string(' ', LastStringLen - line.Length));
+                }
+
+                LastStringLen = line.Length;
+            }
+
+            if (file.Size != matchFile.Node.Size ||
+                (deepCheck && FileAndIoUtils.DeepFileCheck(matchFile.Node.FullPath, file.FullPath)) ||
+                (hash && FileAndIoUtils.CalculateMd5(matchFile.Node.FullPath) != FileAndIoUtils.CalculateMd5(file.FullPath)))
             {
                 list.Add(new DifferenceNode(file, matchFile.Node, Differences.FileMissMatch));
             }
 
+            Checked += file.Size;
             lookupFiles[file.Name] = (true, matchFile.Node);
         }
 

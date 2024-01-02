@@ -9,7 +9,6 @@ internal static class FileAndIoUtils
     public static char DirectorySeparator => _directorySeparatorStr ??
                                              (_directorySeparatorStr = Path.Combine("4", "4").Replace("4", "")
                                                  .First()).Value;
-
     public static string CalculateMd5(string filename)
     {
         using var md5 = MD5.Create();
@@ -20,6 +19,25 @@ internal static class FileAndIoUtils
 
     private static readonly string[] Suffix = { "B", "KB", "MB", "GB", "TB", "PB", "EB" }; //Longs run out around EB
 
+    public static bool DeepFileCheck(string file1, string file2)
+    {
+        if (file1 == file2) return true;
+        var (fs1, fs2) = (new FileStream(file1, FileMode.Open), new FileStream(file2, FileMode.Open));
+        if (fs1.Length != fs2.Length) return false;
+        var exact = true;
+        for (int i = 0; i < fs1.Length; i++)
+        {
+            if (fs1.ReadByte() == fs2.ReadByte()) continue;
+            exact = false;
+            break;
+        }
+
+        fs1.Close();
+        fs2.Close();
+
+        return exact;
+    }
+    
     public static string BytesToString(long byteCount)
     {
         if (byteCount == 0)

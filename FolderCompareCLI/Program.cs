@@ -5,12 +5,17 @@ namespace FolderCompareCLI;
 
 public class Program
 {
-    private const string HelpText = @"Arguments required expected args: {Source}  {Destination} {flags}
+    private const string HelpText = @"Arguments required expected args: {Source}  {Destination} {flags[]}
     Source : source path for comparison
     Destination: destination path for comparison
     
     Flags
-        -hash enables hash check lot slower off by default
+        -hash enables a md5 check on files it compares slow
+        -deep enables deep check (byte for byte) a very slow
+
+    Hash can be faster in a lot of instances due to not having to jump between 
+    file streams it less of a gaurentee than deep but good enough for most situations.
+    if both hash and deep are parsed just deep will be done as its 100% complete
 ";
 
     private static Dictionary<Guid, DifferenceNodeView> _differenceNodeViews = null;
@@ -27,8 +32,8 @@ public class Program
 
         var sourcePath = args[0].TrimEnd(FileAndIoUtils.DirectorySeparator);
         var destinationPath = args[1].TrimEnd(FileAndIoUtils.DirectorySeparator);
-        var calcHash = args.Length > 2 && args[2] == "-hash";
-
+        var deep = args.Length > 2 && args.Skip(2).Contains("-deep");
+        var hash = !deep && (args.Length > 2 && args.Skip(2).Contains("-hash"));
         if (!StrIsPath(sourcePath) || !StrIsPath(destinationPath)) return;
         if (sourcePath.Contains(destinationPath) || destinationPath.Contains(sourcePath))
         {
@@ -37,14 +42,14 @@ public class Program
         }
 
         Console.Clear();
-        
+
         Exception exception = null;
         Task.Run(() =>
         {
             try
             {
                 var (sourceFolderNodes, destinationFolderNodes) = BuildNodeUtils.BuildFolderPaths(sourcePath, destinationPath);
-                _differenceNodeViews = BuildNodeUtils.CalculateDifferences(sourceFolderNodes, destinationFolderNodes, calcHash)
+                _differenceNodeViews = BuildNodeUtils.CalculateDifferences(sourceFolderNodes, destinationFolderNodes, deep, hash)
                     .Select(w => new DifferenceNodeView(w, sourcePath, destinationPath))
                     .ToDictionary(q => q.Id);
             }
@@ -55,15 +60,19 @@ public class Program
         });
 
         var previous = '/';
+        var text = "Running with " + (deep ? "deep check" : "") + (hash ? "hash check" : "") + (!deep && !hash ? "no check" : "");
         while (_differenceNodeViews == null)
         {
+            if (exception != null) throw exception;
+            Console.SetCursorPosition(0, 0);
+            Console.Write(new string(' ', Console.BufferWidth));
             Console.SetCursorPosition(0, 0);
             previous = previous == '/' ? '\\' : '/';
-            Console.Write($"{previous} Building data");
-            await Task.Delay(200);
+            Console.Write($"{previous} {text}, Files compared so far : {BuildNodeUtils.CheckedSoFar}");
+            await Task.Delay(500);
         }
 
-        if (exception != null) throw exception;
+
         await DrawMainUi();
     }
 
@@ -81,7 +90,7 @@ public class Program
         int pageNumber = 0;
         while (true)
         {
-            Console.SetCursorPosition(0,0);
+            Console.SetCursorPosition(0, 0);
             Console.Clear();
             if (_differenceNodeViews.Any() == false)
             {

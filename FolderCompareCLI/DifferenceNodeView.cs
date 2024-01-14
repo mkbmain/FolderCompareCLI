@@ -71,8 +71,6 @@ internal class DifferenceNodeView
 
     public Guid Id { get; } = Guid.NewGuid();
 
-    public DifferenceNode Node { get; }
-
     public List<KeyValuePair<string, Action>> Options { get; }
 
     public string DisplayText { get; }

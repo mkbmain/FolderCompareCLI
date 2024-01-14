@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Security.Cryptography;
 
 namespace FolderCompareCLI.Utils;
@@ -9,6 +10,7 @@ internal static class FileAndIoUtils
     public static char DirectorySeparator => _directorySeparatorStr ??
                                              (_directorySeparatorStr = Path.Combine("4", "4").Replace("4", "")
                                                  .First()).Value;
+
     public static string CalculateMd5(string filename)
     {
         using var md5 = MD5.Create();
@@ -17,7 +19,7 @@ internal static class FileAndIoUtils
         return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
     }
 
-    private static readonly string[] Suffix = { "B", "KB", "MB", "GB", "TB", "PB", "EB" }; //Longs run out around EB
+    private static readonly ImmutableArray<string> Suffix = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]; //Longs run out around EB
 
     public static bool DeepFileCheck(string file1, string file2)
     {
@@ -25,7 +27,7 @@ internal static class FileAndIoUtils
         var (fs1, fs2) = (new FileStream(file1, FileMode.Open), new FileStream(file2, FileMode.Open));
         if (fs1.Length != fs2.Length) return false;
         var exact = true;
-        for (int i = 0; i < fs1.Length; i++)
+        for (var i = 0; i < fs1.Length; i++)
         {
             if (fs1.ReadByte() == fs2.ReadByte()) continue;
             exact = false;
@@ -37,7 +39,7 @@ internal static class FileAndIoUtils
 
         return exact;
     }
-    
+
     public static string BytesToString(long byteCount)
     {
         if (byteCount == 0)
@@ -48,7 +50,9 @@ internal static class FileAndIoUtils
         return (Math.Sign(byteCount) * num).ToString() + Suffix[place];
     }
 
-    public static string GetRelativePath(string fullPath, string startingPoint) => fullPath.StartsWith(startingPoint) ? fullPath[(startingPoint.Length)..].TrimStart(DirectorySeparator).TrimEnd(DirectorySeparator) : fullPath;
+    public static string GetRelativePath(string fullPath, string startingPoint) => fullPath.StartsWith(startingPoint)
+        ? fullPath[(startingPoint.Length)..].TrimStart(DirectorySeparator).TrimEnd(DirectorySeparator)
+        : fullPath;
 
     public static void DirectoryCopy(string sourceDirName, string destDirName)
     {
@@ -70,10 +74,10 @@ internal static class FileAndIoUtils
             file.CopyTo(tempPath, false);
         }
 
-        foreach (var subdir in dir.GetDirectories())
+        foreach (var directoryInfo in dir.GetDirectories())
         {
-            var tempPath = Path.Combine(destDirName, subdir.Name);
-            DirectoryCopy(subdir.FullName, tempPath);
+            var tempPath = Path.Combine(destDirName, directoryInfo.Name);
+            DirectoryCopy(directoryInfo.FullName, tempPath);
         }
     }
 }

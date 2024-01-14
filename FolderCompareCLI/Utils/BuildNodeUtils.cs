@@ -7,18 +7,18 @@ internal static class BuildNodeUtils
 {
     public static (FolderNode src, FolderNode des) BuildFolderPaths(string src, string destination) => (GetFolderNode(src), GetFolderNode(destination));
 
-    private static long Checked = 0;
+    private static long _checked;
 
-    public static string CheckedSoFar => Checked == 0 ? "Building Tree" : FileAndIoUtils.BytesToString(Checked);
+    public static string CheckedSoFar => _checked == 0 ? "Building Tree" : FileAndIoUtils.BytesToString(_checked);
 
-    public static FolderNode GetFolderNode(string path) =>
+    private static FolderNode GetFolderNode(string path) =>
         new(
             path.TrimEnd(FileAndIoUtils.DirectorySeparator).Split(FileAndIoUtils.DirectorySeparator).Last(),
             path,
             Directory.GetDirectories(path).Select(GetFolderNode).ToList(), GetFiles(path));
 
 
-    private static IList<FileNode> GetFiles(string path) => Directory.GetFiles(path)
+    private static List<FileNode> GetFiles(string path) => Directory.GetFiles(path)
         .Select(w => new FileInfo(w))
         .Select(q => new FileNode(q.Name, q.FullName, q.Length)).ToList();
 
@@ -46,8 +46,8 @@ internal static class BuildNodeUtils
         return list;
     }
 
-    private const int ReportValue = 50 * 1000 * 1000; // don't report files under 50MB approx they should be so quick not worth printing out
-    private static int LastStringLen = 0;
+    private const int ReportValue = 25 * 1000 * 1000; // don't report files under 25MB approx they should be so quick not worth printing out
+    private static int _lastStringLen;
 
     private static IEnumerable<DifferenceNode> CalcDifferencesInFiles(IEnumerable<FileNode> source, IEnumerable<FileNode> dest, bool deepCheck, bool hash)
     {
@@ -66,12 +66,12 @@ internal static class BuildNodeUtils
                 Console.SetCursorPosition(0, 3);
                 var line = $"{file.Name} -- {FileAndIoUtils.BytesToString(file.Size)}";
                 Console.Write(line);
-                if (line.Length < LastStringLen)
+                if (line.Length < _lastStringLen)
                 {
-                    Console.Write(new string(' ', LastStringLen - line.Length));
+                    Console.Write(new string(' ', _lastStringLen - line.Length));
                 }
 
-                LastStringLen = line.Length;
+                _lastStringLen = line.Length;
             }
 
             if (file.Size != matchFile.Node.Size ||
@@ -81,7 +81,7 @@ internal static class BuildNodeUtils
                 list.Add(new DifferenceNode(file, matchFile.Node, Differences.FileMissMatch));
             }
 
-            Checked += file.Size;
+            _checked += file.Size;
             lookupFiles[file.Name] = (true, matchFile.Node);
         }
 

@@ -1,4 +1,5 @@
-﻿using FolderCompareCLI.Model;
+﻿using FolderCompareCLI.Enums;
+using FolderCompareCLI.Model;
 using FolderCompareCLI.Utils;
 
 namespace FolderCompareCLI;
@@ -97,11 +98,13 @@ public class Program
             Console.Clear();
             var allowedNodes = (Console.BufferHeight - 2) / 4;
             allowedNodes = allowedNodes < 1 ? 1 : allowedNodes;
-            var differenceNodes = _differenceNodeViews.Chunk(allowedNodes).ToArray();
-            pageNumber = pageNumber < differenceNodes.Length ? pageNumber : differenceNodes.Length - 1;
-            var page = pageNumber > differenceNodes.Length
-                ? differenceNodes.Last()
-                : differenceNodes.Skip(pageNumber).First();
+
+            var pageNodes = _differenceNodeViews.Chunk(allowedNodes).ToArray();
+            pageNumber = pageNumber < pageNodes.Length ? pageNumber : pageNodes.Length - 1;
+            var page = pageNumber > pageNodes.Length
+                ? pageNodes.Last()
+                : pageNodes.Skip(pageNumber).First();
+
             Console.WriteLine("Option -- details");
             for (var index = 0; index < page.Length; index++)
             {
@@ -118,10 +121,12 @@ public class Program
                 Console.WriteLine($"p  -- Previous Page");
             }
 
-            if (pageNumber < differenceNodes.Length - 1)
+            if (pageNumber < pageNodes.Length - 1)
             {
                 Console.WriteLine($"n -- Next Page");
             }
+
+            Console.WriteLine("c -- copy all source to destination nodes on this page");
 
             Console.WriteLine("e -- Exit");
 
@@ -133,17 +138,26 @@ public class Program
                 case "p" when pageNumber > 0:
                     pageNumber -= 1;
                     continue;
-                case "n" when pageNumber < differenceNodes.Length - 1:
+                case "c":
+                    Differences[] allowedDifferences = [Differences.FileInSourceNotInDest, Differences.DirInSourceNotInDest];
+                    foreach (var f in page.Where(w=> allowedDifferences.Contains(w.Value.Differences)))
+                    {
+                        Console.Clear();
+                        Console.WriteLine(f.Value.DisplayText);
+                        await RunAction(f.Value.Options.First(w => w.ActionDetails == ActionDetails.CopyOver));
+                        _differenceNodeViews.Remove(f.Key);
+                    }
+
+                    break;
+                case "n" when pageNumber < pageNodes.Length - 1:
                     pageNumber += 1;
                     continue;
                 case "e":
                     return;
             }
 
-            if (!int.TryParse(entry, out var option) || option > page.Length || option < 0)
-            {
-                continue;
-            }
+            if (!int.TryParse(entry, out var option) || option > page.Length || option < 0) continue;
+            
 
             if (await DisplayOptions(page[option].Value))
             {
@@ -161,50 +175,47 @@ public class Program
             for (var index = 0; index < view.Options.Count; index++)
             {
                 var item = view.Options[index];
-                Console.WriteLine($"{index} -- " + item.Key);
+                Console.WriteLine($"{index} -- " + item.Text);
             }
 
             Console.WriteLine("b -- back to previous menu");
             Console.Write("Enter Option:");
             var entry = Console.ReadLine();
-            if (entry == "b")
-            {
-                return false;
-            }
+            if (entry == "b") return false;
+            if (!int.TryParse(entry, out var option) || option > view.Options.Count || option < 0) continue;
 
-            if (!int.TryParse(entry, out var option) || option > view.Options.Count || option < 0)
-            {
-                continue;
-            }
-
-            bool done = false;
-            Exception exception = null;
-            Task.Run(() =>
-            {
-                try
-                {
-                    view.Options[option].Value();
-                }
-                catch (Exception e)
-                {
-                    exception = e;
-                }
-
-                done = true;
-            });
-            var pos = Console.GetCursorPosition();
-            int dots = 0;
-            while (!done)
-            {
-                Console.SetCursorPosition(pos.Left, pos.Top);
-                dots++;
-                Console.WriteLine("Executing {0}   ", string.Join("", Enumerable.Range(0, dots).Select(_ => ".")));
-                dots = dots > 3 ? 0 : dots;
-                await Task.Delay(200);
-            }
-
-            if (exception != null) throw exception;
+            await RunAction(view.Options[option]);
             return true;
         }
+    }
+
+    private static async Task RunAction(NodeAction node)
+    {
+        bool done = false;
+        Exception exception = null;
+        Task.Run(() =>
+        {
+            try
+            {
+                node.Action();
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+            done = true;
+        });
+        var pos = Console.GetCursorPosition();
+        int dots = 0;
+        while (!done)
+        {
+            Console.SetCursorPosition(pos.Left, pos.Top);
+            dots++;
+            Console.WriteLine("Executing {0}   ", string.Join("", Enumerable.Range(0, dots).Select(_ => ".")));
+            dots = dots > 3 ? 0 : dots;
+            await Task.Delay(200);
+        }
+
+        if (exception != null) throw exception;
     }
 }

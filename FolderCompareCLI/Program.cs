@@ -10,9 +10,13 @@ public class Program
     Source : source path for comparison
     Destination: destination path for comparison
     
-    Flags
-        -hash enables hash check using md5 (off by default), can only have 1 hash enabled
-        -hash256 enables hash check using sha256 (off by default), can only have 1 hash enabled
+
+    Hash Options, Hashing is off by default as it is slower and for most files Size will work
+    (only can hash type can run at a time):
+    
+        Flags
+        -hash enables hash check using md5 (off by default)
+        -hash256 enables hash check using sha256 (off by default)
 ";
 
     private static Dictionary<Guid, DifferenceNodeView> _differenceNodeViews = null;

@@ -9,7 +9,10 @@ Folder Compare Cli is similar to my Folder Compare but with out the overhead of 
 <p>Arguments required expected args: {Source}  {Destination} {flags}</p>
 <p>Source : source path for comparison</p>
 <p>Destination: destination path for comparison</p>
-<p> optional flag -hash enables hash check lot slower off by default</p>
+<br>
+<p> checking hash of files is off by default but can be enabled with optional flags</p>
+<p> optional flag -hash enables hash check using md5  off by default</p>
+<p> optional flag -hash256 enables hash check using sha256 off by default</p>
 
 
 

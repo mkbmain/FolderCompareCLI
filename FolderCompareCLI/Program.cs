@@ -10,8 +10,13 @@ public class Program
     Source : source path for comparison
     Destination: destination path for comparison
     
-    Flags
-        -hash enables hash check lot slower off by default
+
+    Hash Options, Hashing is off by default as it is slower and for most files Size will work
+    (only can hash type can run at a time):
+    
+        Flags
+        -hash enables hash check using md5 (off by default)
+        -hash256 enables hash check using sha256 (off by default)
 ";
 
     private static Dictionary<Guid, DifferenceNodeView> _differenceNodeViews = null;
@@ -28,7 +33,9 @@ public class Program
 
         var sourcePath = args[0].TrimEnd(FileAndIoUtils.DirectorySeparator);
         var destinationPath = args[1].TrimEnd(FileAndIoUtils.DirectorySeparator);
-        var calcHash = args.Length > 2 && args[2] == "-hash";
+        var hashType = args.Length > 2 && args[2] == "-hash" ? HashType.Md5 : HashType.None;
+        hashType = args.Length > 2 && args[2] == "-hash256" ? HashType.Sha256 : hashType;
+
         var sourcePathWithDirSeparator = $"{sourcePath}{FileAndIoUtils.DirectorySeparator}";
         var destinationPathWithDirSeparator = $"{destinationPath}{FileAndIoUtils.DirectorySeparator}";
         if (!StrIsPath(sourcePath) || !StrIsPath(destinationPath)) return;
@@ -49,7 +56,7 @@ public class Program
                 var (sourceFolderNodes, destinationFolderNodes) =
                     BuildNodeUtils.BuildFolderPaths(sourcePath, destinationPath);
                 _differenceNodeViews = BuildNodeUtils
-                    .CalculateDifferences(sourceFolderNodes, destinationFolderNodes, calcHash)
+                    .CalculateDifferences(sourceFolderNodes, destinationFolderNodes, hashType)
                     .Select(w => new DifferenceNodeView(w, sourcePath, destinationPath))
                     .ToDictionary(q => q.Id);
             }
@@ -139,8 +146,9 @@ public class Program
                     pageNumber -= 1;
                     continue;
                 case "c":
-                    Differences[] allowedDifferences = [Differences.FileInSourceNotInDest, Differences.DirInSourceNotInDest];
-                    foreach (var f in page.Where(w=> allowedDifferences.Contains(w.Value.Differences)))
+                    Differences[] allowedDifferences =
+                        [Differences.FileInSourceNotInDest, Differences.DirInSourceNotInDest];
+                    foreach (var f in page.Where(w => allowedDifferences.Contains(w.Value.Differences)))
                     {
                         Console.Clear();
                         Console.WriteLine(f.Value.DisplayText);
@@ -157,7 +165,7 @@ public class Program
             }
 
             if (!int.TryParse(entry, out var option) || option > page.Length || option < 0) continue;
-            
+
 
             if (await DisplayOptions(page[option].Value))
             {
@@ -203,6 +211,7 @@ public class Program
             {
                 exception = e;
             }
+
             done = true;
         });
         var pos = Console.GetCursorPosition();

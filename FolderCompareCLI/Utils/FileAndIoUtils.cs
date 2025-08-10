@@ -9,13 +9,19 @@ internal static class FileAndIoUtils
     public static char DirectorySeparator => _directorySeparatorStr ??
                                              (_directorySeparatorStr = Path.Combine("4", "4").Replace("4", "")
                                                  .First()).Value;
+    
+    public static string CalculateMd5(string filename) =>
+        CalculateHash(filename, stream => MD5.Create().ComputeHash(stream));
+    
+    public static string CalculateSha256(string filename) =>
+        CalculateHash(filename, stream =>  SHA256.Create().ComputeHash(stream));
 
-    public static string CalculateMd5(string filename)
+
+    private static string CalculateHash(string fileName, Func<Stream, byte[]> func)
     {
-        using var md5 = MD5.Create();
-        using var stream = File.OpenRead(filename);
-        var hash = md5.ComputeHash(stream);
-        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+        using var stream = File.OpenRead(fileName);
+        var hash = func(stream);
+        return BitConverter.ToString(hash).Replace("-", "");
     }
 
     private static readonly string[] Suffix = { "B", "KB", "MB", "GB", "TB", "PB", "EB" }; //Longs run out around EB
@@ -30,7 +36,9 @@ internal static class FileAndIoUtils
         return (Math.Sign(byteCount) * num).ToString() + Suffix[place];
     }
 
-    public static string GetRelativePath(string fullPath, string startingPoint) => fullPath.StartsWith(startingPoint) ? fullPath[(startingPoint.Length)..].TrimStart(DirectorySeparator).TrimEnd(DirectorySeparator) : fullPath;
+    public static string GetRelativePath(string fullPath, string startingPoint) => fullPath.StartsWith(startingPoint)
+        ? fullPath[(startingPoint.Length)..].TrimStart(DirectorySeparator).TrimEnd(DirectorySeparator)
+        : fullPath;
 
     public static void DirectoryCopy(string sourceDirName, string destDirName)
     {
